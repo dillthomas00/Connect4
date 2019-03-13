@@ -2,7 +2,8 @@ import pygame
 import sys
 import random
 import time
-import numpy 
+import numpy
+import copy
 
 # General Pygame  Setup
 pygame.init()
@@ -54,7 +55,7 @@ class app():
                             pos_x, posy = event.pos
                             row_picked = int((pos_x - 410) / 98) # column is vertical, row is horizontal
                             self.counter_place(row_picked)
-                            self.computer_evaluate()
+                            self.computer_move() #AI's Turn
                                 
             pygame.display.flip()
             fpsControl.tick(60)
@@ -78,7 +79,7 @@ class app():
                 x_displacement = self.starting_x + (self.displace_x * row_picked)
                 y_displacement = self.starting_y  + (self.displace_y * column_picked)
                 self.counter_animation(x_displacement, y_displacement, counter_type)
-                self.winner_check(column_picked, row_picked, player_counter_numerator)
+                self.winner_check(player_counter_numerator)
                 break
             else:
                 counter = counter - 1
@@ -96,25 +97,30 @@ class app():
         self.background.blit(counter_type, (x_displacement, y_displacement))
         self.screen.blit(self.background, (0,0))
 
-    def winner_check(self, column_picked, row_picked, counter_numerator) :
+    def winner_check(self,  counter_numerator) :
         for c in range(column_count-3): #Horizontal
                 for r in range(row_count):
                         if board[r][c] == counter_numerator and board[r][c+1] == counter_numerator and board[r][c+2] == counter_numerator and board[r][c+3] == counter_numerator:
                             print ("Player" + str(counter_numerator) +  " has won")
+                            return True
         for c in range(column_count): #Vertical
                 for r in range(row_count-3):
                         if board[r][c] == counter_numerator and board[r+1][c] == counter_numerator and board[r+2][c] == counter_numerator and board[r+3][c] == counter_numerator:
                             print ("Player" + str(counter_numerator) +  " has won")
+                            return True
         for c in range(column_count-3): #Positive Diagional
                 for r in range(row_count-3):
                         if board[r][c] == counter_numerator and board[r+1][c+1] == counter_numerator and board[r+2][c+2] == counter_numerator and board[r+3][c+3] == counter_numerator:
                             print ("Player" + str(counter_numerator) +  " has won")
+                            return True
         for c in range(column_count-3): #Negative Digional
                 for r in range(3, row_count):
                         if board[r][c] == counter_numerator and board[r-1][c+1] == counter_numerator and board[r-2][c+2] == counter_numerator and board[r-3][c+3] == counter_numerator:
                             print ("Player" + str(counter_numerator) +  " has won")
+                            return True
+        return False
 
-    def computer_evaluate(self):
+    def valid_locations_check(self):
         valid_locations = []
         for r in range(row_count):
             for c in range(column_count): #Horizontal
@@ -125,108 +131,68 @@ class app():
                         valid_locations.remove(obselete_location)
                     except:
                         pass
-        column_picked, row_picked = self.best_move(valid_locations)
-        print (column_picked, row_picked)
-        self.counter_place(column_picked)
+        return valid_locations
 
-                    
-    def best_move(self, valid_locations):
-        print (valid_locations)
-        best_score = -10000
-        best_col = random.choice(valid_locations)
-        best_row = 0
-        for x in valid_locations:
-            row = int(x[0])
-            column = int(x[2:])
-            temp_board = board.copy()
-            score = self.temp_drop(temp_board, row, column, valid_locations)
-            if score > best_score:
-                best_score = score
-                best_column = column
-                best_row = row
-        return best_column, row
-            
 
-    def temp_drop(self, temp_board, row, column, valid_locations):
-        computer_counter = 2
-        temp_board[row][column] = computer_counter
-        score = 0
-        center_array = [int(i) for i in list(board[:, row_count //2])]
-        center_count = center_array.count(computer_counter)
-        score += center_count * 3
-        
-        ## Score Horizontal
-        for r in range(row_count):
-                row_array = [int(i) for i in list(board[r,:])]
-                for c in range(column_count-3):
-                        window = row_array[c:c+4]
-                        score += self.evaluate_window(window)
+    def computer_move(self):
+        computer_counter = 0
+        best_moves, priority_move, scores = self.get_potential_moves(board)
+        if priority_move == True:
+            best_move = best_moves[-1]
+        else:
+            best_move = random.choice(best_moves)
+            highest_score = 0
+            higest_score_counter = 0
+            counter = 0
+##            for x in best_moves: ##Unimplemented score checker --- Logic is sound --- Just requires the scoring and potential winning check functions
+##                if x > highest_score:
+##                    highest_score = x
+##                    highest_score_counter = counter
+##                counter = counter + 1
+##              x = int(best_move[highest_score_counter])                    
+                
+        x = int(best_move[2:])
+        print (x)
+        self.counter_place(x)        
 
-        ## Score Vertical
-        for c in range(column_count):
-                col_array = [int(i) for i in list(board[:,c])]
-                for r in range(row_count-3):
-                        window = col_array[r:r+4]
-                        score += self.evaluate_window(window)
 
-        ## posiive sloped diagonal
-        for r in range(row_count-3):
-                for c in range(column_count-3):
-                        window = [board[r+i][c+i] for i in range(4)]
-                        score += self.evaluate_window(window)
-        ## 
-        for r in range(row_count-3):
-                for c in range(column_count-3):
-                        window = [board[r+3-i][c+i] for i in range(4)]
-                        score += self.evaluate_window(window)
-        return score
+    def get_potential_moves(self, current_board):
+        player_counter = 1
+        computer_counter = 0
+        # Figure out the best move to make.
+        valid_locations = self.valid_locations_check()
+        best_moves = []
+        scores = []
+        priority_move = False
+        for player_move in valid_locations:
+            dupe_board = copy.deepcopy(current_board)
+            result = self.make_move_attempt(dupe_board, player_move, 2) #Do a score up-count for whatever is in the dupe board
+            if result == True:
+                print ("Problematic winning move")
+                best_moves.append(player_move)
+                priority_move = True
+                break
+            else:
+                # do other player's moves and determine best one that they will likely make
+                for enemy_move in valid_locations:
+                    dupe_board2 = copy.deepcopy(dupe_board)
+                    result = self.make_move_attempt(dupe_board2, player_move, 1)
+                    if result == True:
+                        best_moves.append(player_move)
+                        priority_move = True
+                        break
+                    else:
+                        best_moves.append(player_move)
+        return best_moves, priority_move, scores 
 
-    def evaluate_window(self, window):
-        score = 0
-        empty = 0
-        computer_piece = 2
-        player_piece = 1
 
-        # Horizontal
-        for r in range(row_count):
-            row_array = [int(i) for i in list(board[r, :])]
-            for c in range(column_count - 3):
-                window = row_array[c : c + 4]
-                if window.count(computer_piece) == 4:
-                    score = score + 100
-                elif window.count(computer_piece) ==3 and window.count(empty) == 1:
-                    score = score + 100
 
-            # Vertical
-            for c in range(column_count):
-                col_array = [int(i) for i in list(board[:, c])]
-                for r in range(row_count - 3):
-                    window = col_array[r : r + 4]
-                    if window.count(computer_piece) == 4:
-                        score = score + 100
-                    elif window.count(computer_piece) == 3 and window.count(empty) == 1:
-                        score = score + 10
-
-            # Positive diagonal
-            for r in range(row_count - 3):
-                for c in range(column_count - 3):
-                    window = [board[r+i][c+i] for i in range(4)]
-                    if window.count(computer_piece) == 4:
-                        score = score + 100
-                    elif window.count(computer_piece) == 3 and window.count(empty) == 1:
-                        score = score + 10
-
-            # Negative diagonal
-            for r in range(row_count - 3):
-                for c in range(column_count - 3):
-                    window = [board[r+i][c+i] for i in range(4)]
-                    if window.count(computer_piece) == 4:
-                        score = score + 100
-                    elif window.count(computer_piece) == 3 and window.count(empty) == 1:
-                        score = score + 10
-                        
-            return score
-                    
+    def make_move_attempt(self, dupeboard, playerMove, counter):
+        x = int(playerMove[0])
+        y = int(playerMove[2:])
+        dupeboard[x][y] = counter
+        result = self.winner_check(counter) #Pretty sure the problem is the logic of the winner check so i will need a seperate winner possble check which will take in the player's move
+        return result
 
    
 app()

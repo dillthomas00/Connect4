@@ -126,14 +126,14 @@ class app():
                     except:
                         pass
         column_picked, row_picked = self.best_move(valid_locations)
-        self.counter_place(row_picked)
+        print (column_picked, row_picked)
+        self.counter_place(column_picked)
 
                     
     def best_move(self, valid_locations):
         print (valid_locations)
-        best_score = 0
-        best_column = int(str(random.choice(valid_locations))[0])
-        print (best_column)
+        best_score = -10000
+        best_col = random.choice(valid_locations)
         best_row = 0
         for x in valid_locations:
             row = int(x[0])
@@ -142,34 +142,9 @@ class app():
             score = self.temp_drop(temp_board, row, column, valid_locations)
             if score > best_score:
                 best_score = score
-                best_column = row
-                best_row = column
-        print (best_score)
-        print (best_column)
-        print (best_row)
-        return best_column, best_row
-
-##    def temp_drop(self, row, column, valid_locations):
-##        window_vertical = []
-##        score = 0
-##        empty = 0
-##        computer_piece = 2
-##        player_piece = 1
-##        boolean_check = True
-##        for x in range(0, 10):
-##            window_vertical.append(board[x][column])
-##
-##        while True:
-##            if score > 0:
-##                return score
-##            else:
-##                if window_vertical.count(computer_piece) == 3 and window_vertical.count(empty) == 1:
-##                    score = 100
-##                elif window_vertical.count(computer_piece) == 2 and window_vertical.count(empty) == 2:
-##                    score = 50
-##                elif window_vertical.count(computer_piece) == 1 and window_vertical.count(empty) == 3:
-##                    score = 25
-##                return score
+                best_column = column
+                best_row = row
+        return best_column, row
             
 
     def temp_drop(self, temp_board, row, column, valid_locations):
@@ -186,26 +161,72 @@ class app():
                 for c in range(column_count-3):
                         window = row_array[c:c+4]
                         score += self.evaluate_window(window)
-        print (score)
+
+        ## Score Vertical
+        for c in range(column_count):
+                col_array = [int(i) for i in list(board[:,c])]
+                for r in range(row_count-3):
+                        window = col_array[r:r+4]
+                        score += self.evaluate_window(window)
+
+        ## posiive sloped diagonal
+        for r in range(row_count-3):
+                for c in range(column_count-3):
+                        window = [board[r+i][c+i] for i in range(4)]
+                        score += self.evaluate_window(window)
+        ## 
+        for r in range(row_count-3):
+                for c in range(column_count-3):
+                        window = [board[r+3-i][c+i] for i in range(4)]
+                        score += self.evaluate_window(window)
         return score
 
-
     def evaluate_window(self, window):
-        print (window)
         score = 0
         empty = 0
         computer_piece = 2
         player_piece = 1
-        if window.count(computer_piece) == 4:
-            score += 100
-        elif window.count(computer_piece) == 3 and window.count(empty) == 1:
-            score += 5
-        elif window.count(computer_piece) == 2 and window.count(empty) == 2:
-            score += 3
-        if window.count(player_piece) == 3 and window.count(empty) == 1:
-            score -= 4
-        return score
 
+        # Horizontal
+        for r in range(row_count):
+            row_array = [int(i) for i in list(board[r, :])]
+            for c in range(column_count - 3):
+                window = row_array[c : c + 4]
+                if window.count(computer_piece) == 4:
+                    score = score + 100
+                elif window.count(computer_piece) ==3 and window.count(empty) == 1:
+                    score = score + 100
+
+            # Vertical
+            for c in range(column_count):
+                col_array = [int(i) for i in list(board[:, c])]
+                for r in range(row_count - 3):
+                    window = col_array[r : r + 4]
+                    if window.count(computer_piece) == 4:
+                        score = score + 100
+                    elif window.count(computer_piece) == 3 and window.count(empty) == 1:
+                        score = score + 10
+
+            # Positive diagonal
+            for r in range(row_count - 3):
+                for c in range(column_count - 3):
+                    window = [board[r+i][c+i] for i in range(4)]
+                    if window.count(computer_piece) == 4:
+                        score = score + 100
+                    elif window.count(computer_piece) == 3 and window.count(empty) == 1:
+                        score = score + 10
+
+            # Negative diagonal
+            for r in range(row_count - 3):
+                for c in range(column_count - 3):
+                    window = [board[r+i][c+i] for i in range(4)]
+                    if window.count(computer_piece) == 4:
+                        score = score + 100
+                    elif window.count(computer_piece) == 3 and window.count(empty) == 1:
+                        score = score + 10
+                        
+            return score
+                    
 
    
 app()

@@ -2,22 +2,10 @@ import random
 import copy
 import sys
 
-BOARDWIDTH = 7
-BOARDHEIGHT = 6
+BOARDWIDTH = 11
+BOARDHEIGHT = 10
 
 def main():
-    """
-    b = getNewBoard()
-    b[6][5] = 'X'
-    b[5][4] = 'X'
-    b[4][3] = 'X'
-    b[3][2] = 'X'
-    drawBoard(b)
-    print(isWinner(b, 'X'))
-
-    sys.exit()
-    """
-
     print('Four-In-A-Row')
     print()
 
@@ -145,6 +133,7 @@ def getPotentialMoves(board, playerTile, lookAhead):
 
     # Figure out the best move to make.
     potentialMoves = [0] * BOARDWIDTH
+    #print (potentialMoves)
     for playerMove in range(BOARDWIDTH):
         dupeBoard = copy.deepcopy(board)
         if not isValidMove(dupeBoard, playerMove):
