@@ -20,6 +20,7 @@ computer_counter = pygame.image.load(".//Assets//computer_counter.png")
 computer_counter = pygame.transform.scale(computer_counter, (80, 75))
 
 
+### Start Menu of Connect4
 class start_menu():
     def __init__(self):
         self.screen = pygame.display.set_mode((screen_width, screen_height))
@@ -60,9 +61,9 @@ class start_menu():
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:  # Left mouse button.
                         if self.play_area.collidepoint(event.pos):
-                            app(1)
-                        if self.play_area_2.collidepoint(event.pos):
                             app(2)
+                        if self.play_area_2.collidepoint(event.pos):
+                            app(1)
                         elif self.instructions_area.collidepoint(event.pos):
                             instructions_state = self.instructions(
                                 instructions_state)  
@@ -170,13 +171,17 @@ class app():
         self.background = self.background.convert()
         self.background.fill((255,255,255))
         self.background.blit(grid, (310, 0)) #(1920 - 1280) / 2
+        back_button  = pygame.image.load(".//Assets//back_button.png")
+        pygame.transform.scale(back_button, (400, 100))
+        self.background.blit(back_button, (790, 910))
         self.screen.blit(self.background, (0,0))
-        # Column Buttons  modular to 98
+
         x1, y1, x2, y2 = 410, 130, 1521, 900
         self.column_area = pygame.Rect(x1, y1, (x2-x1), (y2-y1))
+        x1, y1, x2, y2 = 790, 910, 1100, 990
+        self.back_button_area = pygame.Rect(x1, y1, (x2-x1), (y2-y1))
         self.play_again_area = pygame.Rect(0,0,0,0)
         self.exit_area = pygame.Rect(0,0,0,0)
-        result = False
         done = False
         while not done:
             for event in pygame.event.get():
@@ -197,12 +202,14 @@ class app():
                                 result = self.winner_check(self.board, 2)
                                 if result == True:
                                     self.winner_route(2)
+                        elif self.back_button_area.collidepoint(event.pos):
+                            start_menu()
                         elif self.play_again_area.collidepoint(event.pos):
                             self.board = numpy.zeros((row_count, column_count))
                             self.__init__(self.gamemode)
                         elif self.exit_area.collidepoint(event.pos):
                             done = True
-                             
+                            start_menu() 
             pygame.display.flip()
             fpsControl.tick(60)
         pygame.quit()
@@ -306,7 +313,6 @@ class app():
                 priority_move = True
                 break
             else:
-
                 # do other player's moves and determine best one that they will likely make
                 for enemy_move in valid_locations:
                     dupe_board2 = copy.deepcopy(dupe_board)
@@ -335,6 +341,7 @@ class app():
         x1, y1, x2, y2 =  810, 650, 1090, 720
         self.exit_area = pygame.Rect(x1, y1, (x2-x1), (y2-y1))
         self.column_area = pygame.Rect(0,0,0,0)
+        self.back_button_area = pygame.Rect(0,0,0,0)
 
 
 start_menu()
